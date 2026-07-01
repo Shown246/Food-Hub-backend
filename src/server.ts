@@ -1,18 +1,9 @@
-import express, { Application } from 'express';
-import { toNodeHandler } from "better-auth/node";
-import {auth} from "../lib/auth"
+import 'dotenv/config';
 import { prisma } from '../lib/prisma';
-import cors from 'cors';
+import { app } from './app';
+
 
 const PORT = process.env.PORT || 3000;
-const app: Application = express();
-app.use(express.json());
-app.use(cors({
-  origin: "http://localhost:4000",
-  credentials: true,
-}));
-
-app.all("/api/auth/*splat", toNodeHandler(auth));
 
 try {
   await prisma.$connect();
@@ -25,7 +16,3 @@ try {
 }finally {
   await prisma.$disconnect();
 }
-
-app.get("/", (req, res) => {
-  res.send("Hello World, How are you?");
-});
