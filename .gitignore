@@ -5,6 +5,6 @@ coverage
 .env
 .env.*
 !.env.example
-
+/prisma/migrations/*
 /generated/prisma
 /tests
