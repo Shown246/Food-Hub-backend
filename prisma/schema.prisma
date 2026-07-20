@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -10,4 +5,337 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  CUSTOMER
+  PROVIDER
+}
+
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum OrderStatus {
+  PLACED
+  PREPARING
+  READY
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH_ON_DELIVERY
+}
+
+enum AuditActorType {
+  USER
+  SYSTEM
+}
+
+enum AuditEntityType {
+  USER
+  CATEGORY
+  MEAL
+  ORDER
+  AUTHENTICATION
+  RATE_LIMIT
+}
+
+enum AuditAction {
+  USER_SUSPENDED
+  USER_REACTIVATED
+  CATEGORY_CREATED
+  CATEGORY_UPDATED
+  CATEGORY_DEACTIVATED
+  CATEGORY_DELETED
+  MEAL_ARCHIVED
+  MEAL_RESTORED
+  ORDER_STATUS_CHANGED
+  PASSWORD_CHANGED
+  AUTHENTICATION_FAILED
+  RATE_LIMIT_EXCEEDED
+}
+
+model User {
+  id                     String        @id @default(cuid())
+  fullName               String        @db.VarChar(100)
+  email                  String        @unique @db.Citext
+  emailVerified          Boolean       @default(false)
+  phone                  String?       @db.VarChar(30)
+  role                   Role          @default(CUSTOMER)
+  status                 AccountStatus @default(ACTIVE)
+  defaultDeliveryAddress String?       @db.Text
+  profileImageUrl        String?       @db.Text
+  lastLoginAt            DateTime?     @db.Timestamptz(3)
+  createdAt              DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt              DateTime      @updatedAt @db.Timestamptz(3)
+
+  sessions           Session[]
+  accounts           Account[]
+  providerProfile    ProviderProfile?
+  customerOrders     Order[]               @relation("CustomerOrders")
+  orderStatusChanges OrderStatusHistory[]  @relation("OrderStatusActor")
+  reviews            Review[]              @relation("CustomerReviews")
+  auditEvents        AuditEvent[]          @relation("AuditActor")
+  idempotencyKeys    OrderIdempotencyKey[]
+
+  @@index([role, status, createdAt])
+  @@index([status])
+  @@map("user")
+}
+
+model Session {
+  id        String    @id @default(cuid())
+  expiresAt DateTime  @db.Timestamptz(3)
+  token     String    @unique @db.VarChar(255)
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @db.Timestamptz(3)
+  revokedAt DateTime? @db.Timestamptz(3)
+  ipAddress String?   @db.VarChar(64)
+  userAgent String?   @db.Text
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([expiresAt])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String    @db.VarChar(255)
+  providerId            String    @db.VarChar(100)
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?   @db.Text
+  refreshToken          String?   @db.Text
+  idToken               String?   @db.Text
+  accessTokenExpiresAt  DateTime? @db.Timestamptz(3)
+  refreshTokenExpiresAt DateTime? @db.Timestamptz(3)
+  scope                 String?   @db.Text
+  password              String?   @db.Text
+  createdAt             DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime  @updatedAt @db.Timestamptz(3)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String   @db.VarChar(255)
+  value      String   @db.Text
+  expiresAt  DateTime @db.Timestamptz(3)
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @db.Timestamptz(3)
+
+  @@index([identifier])
+  @@index([expiresAt])
+  @@map("verification")
+}
+
+model ProviderProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  name            String   @db.VarChar(150)
+  description     String   @db.Text
+  address         String   @db.Text
+  phone           String   @db.VarChar(30)
+  logoUrl         String?  @db.Text
+  openingHours    String?  @db.VarChar(1000)
+  acceptingOrders Boolean  @default(true)
+  createdAt       DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @db.Timestamptz(3)
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Restrict)
+  meals  Meal[]
+  orders Order[] @relation("ProviderOrders")
+
+  @@index([acceptingOrders, name])
+  @@index([createdAt])
+  @@map("provider_profile")
+}
+
+model Category {
+  id           String   @id @default(cuid())
+  name         String   @unique @db.Citext
+  slug         String   @unique @db.VarChar(120)
+  description  String?  @db.Text
+  isActive     Boolean  @default(true)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(3)
+
+  meals Meal[]
+
+  @@index([isActive, displayOrder, name])
+  @@map("category")
+}
+
+model Meal {
+  id                     String   @id @default(cuid())
+  providerId             String
+  categoryId             String
+  name                   String   @db.VarChar(150)
+  slug                   String?  @db.VarChar(180)
+  description            String   @db.Text
+  price                  Decimal  @db.Decimal(12, 2)
+  imageUrl               String?  @db.Text
+  dietaryLabels          String[] @default([])
+  preparationTimeMinutes Int?
+  isAvailable            Boolean  @default(true)
+  isArchived             Boolean  @default(false)
+  createdAt              DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt              DateTime @updatedAt @db.Timestamptz(3)
+
+  provider   ProviderProfile @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  category   Category        @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  orderItems OrderItem[]
+  reviews    Review[]
+
+  @@unique([providerId, slug])
+  @@index([providerId, isArchived, isAvailable, createdAt])
+  @@index([categoryId, isArchived, isAvailable, createdAt])
+  @@index([name])
+  @@index([createdAt])
+  @@map("meal")
+}
+
+model Order {
+  id                   String        @id @default(cuid())
+  orderNumber          String        @unique @db.VarChar(32)
+  customerId           String
+  providerId           String
+  status               OrderStatus   @default(PLACED)
+  paymentMethod        PaymentMethod @default(CASH_ON_DELIVERY)
+  customerName         String        @db.VarChar(100)
+  customerPhone        String        @db.VarChar(30)
+  deliveryAddress      String        @db.Text
+  deliveryInstructions String?       @db.VarChar(1000)
+  subtotal             Decimal       @db.Decimal(12, 2)
+  deliveryFee          Decimal       @default(0) @db.Decimal(12, 2)
+  tax                  Decimal       @default(0) @db.Decimal(12, 2)
+  serviceFee           Decimal       @default(0) @db.Decimal(12, 2)
+  total                Decimal       @db.Decimal(12, 2)
+  cancellationReason   String?       @db.VarChar(500)
+  cancelledAt          DateTime?     @db.Timestamptz(3)
+  deliveredAt          DateTime?     @db.Timestamptz(3)
+  createdAt            DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime      @updatedAt @db.Timestamptz(3)
+
+  customer      User                 @relation("CustomerOrders", fields: [customerId], references: [id], onDelete: Restrict)
+  provider      ProviderProfile      @relation("ProviderOrders", fields: [providerId], references: [id], onDelete: Restrict)
+  items         OrderItem[]
+  statusHistory OrderStatusHistory[]
+  reviews       Review[]
+  idempotency   OrderIdempotencyKey?
+
+  @@index([customerId, status, createdAt])
+  @@index([customerId, createdAt])
+  @@index([providerId, status, createdAt])
+  @@index([providerId, createdAt])
+  @@index([status, createdAt])
+  @@index([createdAt])
+  @@map("order")
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  mealId    String
+  mealName  String  @db.VarChar(150)
+  unitPrice Decimal @db.Decimal(12, 2)
+  quantity  Int
+  itemNote  String? @db.VarChar(500)
+  lineTotal Decimal @db.Decimal(12, 2)
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  meal  Meal  @relation(fields: [mealId], references: [id], onDelete: Restrict)
+
+  @@unique([orderId, mealId])
+  @@index([orderId])
+  @@index([mealId])
+  @@map("order_item")
+}
+
+model OrderStatusHistory {
+  id          String       @id @default(cuid())
+  orderId     String
+  fromStatus  OrderStatus?
+  toStatus    OrderStatus
+  actorUserId String
+  actorRole   Role
+  note        String?      @db.VarChar(500)
+  createdAt   DateTime     @default(now()) @db.Timestamptz(3)
+
+  order     Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  actorUser User  @relation("OrderStatusActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([orderId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@map("order_status_history")
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  customerId String
+  mealId     String
+  orderId    String
+  rating     Int
+  comment    String?  @db.Text
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @db.Timestamptz(3)
+
+  customer User  @relation("CustomerReviews", fields: [customerId], references: [id], onDelete: Restrict)
+  meal     Meal  @relation(fields: [mealId], references: [id], onDelete: Restrict)
+  order    Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@unique([customerId, orderId, mealId])
+  @@index([mealId, isActive, createdAt])
+  @@index([customerId, createdAt])
+  @@index([orderId])
+  @@map("review")
+}
+
+model OrderIdempotencyKey {
+  id             String   @id @default(cuid())
+  customerId     String
+  idempotencyKey String   @db.VarChar(255)
+  requestHash    String   @db.Char(64)
+  orderId        String   @unique
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  expiresAt      DateTime @db.Timestamptz(3)
+
+  customer User  @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  order    Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@unique([customerId, idempotencyKey])
+  @@index([expiresAt])
+  @@map("order_idempotency_key")
+}
+
+model AuditEvent {
+  id          String          @id @default(cuid())
+  actorType   AuditActorType
+  actorUserId String?
+  actorRole   Role?
+  action      AuditAction
+  entityType  AuditEntityType
+  entityId    String?         @db.VarChar(255)
+  requestId   String?         @db.VarChar(100)
+  metadata    Json?           @db.JsonB
+  createdAt   DateTime        @default(now()) @db.Timestamptz(3)
+
+  actorUser User? @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([actorUserId, createdAt])
+  @@index([entityType, entityId, createdAt])
+  @@index([action, createdAt])
+  @@index([createdAt])
+  @@map("audit_event")
 }

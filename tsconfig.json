@@ -1,20 +1,27 @@
 {
   "compilerOptions": {
-    "module": "ESNext",
-    "moduleResolution": "node",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "target": "ES2023",
+    "lib": ["ES2023"],
     "strict": true,
     "esModuleInterop": true,
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
+    "rootDir": ".",
+    "outDir": "dist",
     "isolatedModules": true,
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "types": ["node", "vitest/globals"]
   },
   "include": [
-    "src/**/*"
+    "src/**/*.ts",
+    "lib/**/*.ts",
+    "tests/**/*.ts",
+    "vitest.config.ts"
   ],
   "exclude": [
     "node_modules",
