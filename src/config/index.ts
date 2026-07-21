@@ -109,7 +109,7 @@ export const loadConfig = (env: NodeJS.ProcessEnv): AppConfig => {
   const baseUrl = required(env, "BETTER_AUTH_URL");
   parseUrl(baseUrl, "BETTER_AUTH_URL", ["http:", "https:"]);
 
-  const defaultOrigins = runtimeEnv === "production" ? "" : "http://localhost:4000";
+  const defaultOrigins = runtimeEnv === "production" ? "" : "http://localhost:3000";
   const corsOrigins = (env.CORS_ORIGINS ?? defaultOrigins)
     .split(",")
     .map((origin) => origin.trim())

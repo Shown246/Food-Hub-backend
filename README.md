@@ -80,8 +80,8 @@ Never use fixture accounts or their password in a shared or production system.
 | `DATABASE_URL` | Required | PostgreSQL connection string used by the application, Prisma, and seed command. |
 | `DATABASE_POOL_MAX` | `10` | Maximum application-side PostgreSQL connections per running API replica. |
 | `BETTER_AUTH_SECRET` | Required, 32+ characters | Signs and protects Better Auth data. Use a different random secret per environment. |
-| `BETTER_AUTH_URL` | Required | Public base URL of this API, such as `http://localhost:3000`. |
-| `CORS_ORIGINS` | Local default `http://localhost:4000` | Comma-separated exact browser origins allowed to send credentialed requests. |
+| `BETTER_AUTH_URL` | Required | Public base URL of this API, such as `http://localhost:5000`. |
+| `CORS_ORIGINS` | Local default `http://localhost:3000` | Comma-separated exact browser origins allowed to send credentialed requests. |
 | `COOKIE_SECURE` | Production default `true` | Requires HTTPS cookies; cannot be false in production. |
 | `COOKIE_SAME_SITE` | `lax` | Cookie policy: `lax`, `strict`, or `none`; `none` requires secure cookies. |
 | `TRUST_PROXY` | `false` | Set true only behind a trusted reverse proxy that supplies correct forwarding headers. |

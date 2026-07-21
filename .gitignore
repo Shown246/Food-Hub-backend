@@ -8,3 +8,4 @@ coverage
 /prisma/migrations/*
 /generated/prisma
 /tests
+/docs
