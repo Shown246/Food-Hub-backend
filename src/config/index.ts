@@ -98,8 +98,9 @@ export const loadConfig = (env: NodeJS.ProcessEnv): AppConfig => {
     throw new ConfigError("PORT must be an integer between 1 and 65535");
   }
 
-  const databaseUrl = required(env, "DATABASE_URL");
-  parseUrl(databaseUrl, "DATABASE_URL", ["postgres:", "postgresql:"]);
+  const databaseUrlName = runtimeEnv === "production" ? "DATABASE_URL" : "TEST_DATABASE_URL";
+  const databaseUrl = required(env, databaseUrlName);
+  parseUrl(databaseUrl, databaseUrlName, ["postgres:", "postgresql:"]);
 
   const secret = required(env, "BETTER_AUTH_SECRET");
   if (secret.length < 32) {

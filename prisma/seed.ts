@@ -3,8 +3,10 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../generated/prisma/client.js";
 import { seedDatabase, seedOptionsFromEnvironment, seedRichDevelopmentFixtures } from "./seed-data.js";
 
-const databaseUrl = process.env.DATABASE_URL?.trim();
-if (!databaseUrl) throw new Error("Invalid seed configuration: DATABASE_URL is required");
+const runtimeEnv = process.env.NODE_ENV?.trim() || "development";
+const databaseUrlName = runtimeEnv === "production" ? "DATABASE_URL" : "TEST_DATABASE_URL";
+const databaseUrl = process.env[databaseUrlName]?.trim();
+if (!databaseUrl) throw new Error(`Invalid seed configuration: ${databaseUrlName} is required`);
 
 const database = new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) });
 

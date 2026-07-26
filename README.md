@@ -24,7 +24,7 @@ API is mounted under `/api`; its detailed contract is in
 2. Copy `.env.example` to `.env` and replace every placeholder. Do not commit
    `.env`; it is intentionally ignored.
 
-3. Create or select an empty PostgreSQL database and set `DATABASE_URL` to its
+3. Create or select an empty PostgreSQL database and set `TEST_DATABASE_URL` to its
    connection string.
 
 4. Apply migrations:
@@ -77,7 +77,8 @@ Never use fixture accounts or their password in a shared or production system.
 | --- | --- | --- |
 | `NODE_ENV` | `development` | `development`, `test`, or `production`; production enables stricter cookie requirements. |
 | `PORT` | `3000` | HTTP listening port. |
-| `DATABASE_URL` | Required | PostgreSQL connection string used by the application, Prisma, and seed command. |
+| `DATABASE_URL` | Required in production | Production PostgreSQL connection string used by the application, Prisma, and seed command. |
+| `TEST_DATABASE_URL` | Required in development/test | Dedicated non-production PostgreSQL connection string used by the application, Prisma, seed command, and integration tests. |
 | `DATABASE_POOL_MAX` | `10` | Maximum application-side PostgreSQL connections per running API replica. |
 | `BETTER_AUTH_SECRET` | Required, 32+ characters | Signs and protects Better Auth data. Use a different random secret per environment. |
 | `BETTER_AUTH_URL` | Required | Public base URL of this API, such as `http://localhost:5000`. |
@@ -122,7 +123,7 @@ development fixture password.
 | `npm start` | Run the compiled server. |
 | `npm test` | Run all unit and integration tests. |
 | `npm run test:unit` | Run unit tests only. |
-| `npm run test:integration` | Run integration tests against `TEST_DATABASE_URL` or `DATABASE_URL`. |
+| `npm run test:integration` | Run integration tests against `TEST_DATABASE_URL`. |
 | `npm run db:generate` | Regenerate Prisma Client after schema changes. |
 | `npm run db:validate` | Validate the authoritative Prisma schema. |
 | `npm run db:migrate:dev` | Create/apply migrations during development. |

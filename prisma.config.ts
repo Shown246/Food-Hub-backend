@@ -3,6 +3,9 @@
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
+const runtimeEnv = process.env.NODE_ENV?.trim() || "development";
+const databaseUrlName = runtimeEnv === "production" ? "DATABASE_URL" : "TEST_DATABASE_URL";
+
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
@@ -10,6 +13,6 @@ export default defineConfig({
     seed: "tsx prisma/seed.ts",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    url: process.env[databaseUrlName],
   },
 });

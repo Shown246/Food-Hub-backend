@@ -36,7 +36,6 @@ export const createAuthenticate = (
   try {
     const identity = await dependencies.resolveSession(fromNodeHeaders(request.headers));
     if (!identity) throw new UnauthorizedError();
-
     const user = await dependencies.findUser(identity.user.id);
     if (!user) throw new UnauthorizedError();
     if (user.status === "SUSPENDED") {
@@ -45,7 +44,6 @@ export const createAuthenticate = (
     if (user.role === "PROVIDER" && !user.providerProfile) {
       throw new ForbiddenError("The provider profile is unavailable.", "PROVIDER_PROFILE_REQUIRED");
     }
-
     request.auth = {
       userId: user.id,
       sessionId: identity.session.id,

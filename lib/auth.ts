@@ -2,11 +2,13 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { config } from "../src/config/index.js";
 import { prisma } from "./prisma.js";
+import { bearer } from "better-auth/plugins";
 
 export const auth = betterAuth({
   baseURL: config.auth.baseUrl,
   secret: config.auth.secret,
   trustedOrigins: config.corsOrigins,
+  plugins: [bearer()],
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),

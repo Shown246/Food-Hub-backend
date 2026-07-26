@@ -85,12 +85,26 @@ export const createAuthService = (dependencies: AuthServiceDependencies = defaul
       throw new ForbiddenError("The provider profile is unavailable.", "PROVIDER_PROFILE_REQUIRED");
     }
 
-    const updated = await database.user.update({
-      where: { id: user.id },
-      data: { lastLoginAt: new Date() },
-      select: ownProfileSelect,
-    });
-    return { data: serializeAuthUser(updated), headers: signedIn.headers };
+    const [updated, account] = await Promise.all([
+      database.user.update({
+        where: { id: user.id },
+        data: { lastLoginAt: new Date() },
+        select: ownProfileSelect,
+      }),
+      database.account.findFirst({
+        where: { userId: user.id },
+        select: { accessToken: true, refreshToken: true },
+      }),
+    ]);
+    return {
+      data: {
+        ...serializeAuthUser(updated),
+        token: signedIn.response.token,
+        accessToken: account?.accessToken ?? null,
+        refreshToken: account?.refreshToken ?? null,
+      },
+      headers: signedIn.headers,
+    };
   };
 
   return {
