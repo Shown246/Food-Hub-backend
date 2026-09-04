@@ -11,69 +11,75 @@ export interface MealServiceDependencies {
   schemaName?: string;
 }
 
-const orderableWhere = (query: MealListQuery): Prisma.MealWhereInput => ({
-  isAvailable: true,
-  isArchived: false,
-  category: { is: { isActive: true } },
-  provider: {
-    is: {
-      acceptingOrders: true,
-      user: { is: { status: "ACTIVE" } },
-    },
-  },
-  ...(query.search ? {
-    OR: [
-      { name: { contains: query.search, mode: "insensitive" } },
-      { description: { contains: query.search, mode: "insensitive" } },
-    ],
-  } : {}),
-  ...(query.categoryId ? {
-    category: {
-      is: {
-        isActive: true,
-        OR: [{ id: query.categoryId }, { slug: query.categoryId }],
+const orderableWhere = (query: MealListQuery): Prisma.MealWhereInput => {
+    const targetCategorySlug = query.category ?? query.categorySlug;
+    const targetProvider = query.provider ?? query.providerId;
+    return {
+      isAvailable: true,
+      isArchived: false,
+      category: { is: { isActive: true } },
+      provider: {
+        is: {
+          acceptingOrders: true,
+          user: { is: { status: "ACTIVE" } },
+        },
       },
-    },
-  } : {}),
-  ...(query.categorySlug ? {
-    category: { is: { isActive: true, slug: query.categorySlug } },
-  } : {}),
-  ...(query.dietary ? { dietaryLabels: { has: query.dietary } } : {}),
-  ...(query.providerId ? { providerId: query.providerId } : {}),
-  ...(query.minPrice || query.maxPrice ? {
-    price: {
-      ...(query.minPrice ? { gte: query.minPrice } : {}),
-      ...(query.maxPrice ? { lte: query.maxPrice } : {}),
-    },
-  } : {}),
-});
+      ...(query.search ? {
+        OR: [
+          { name: { contains: query.search, mode: "insensitive" } },
+          { description: { contains: query.search, mode: "insensitive" } },
+        ],
+      } : {}),
+      ...(query.categoryId ? {
+        category: {
+          is: {
+            isActive: true,
+            OR: [{ id: query.categoryId }, { slug: query.categoryId }],
+          },
+        },
+      } : {}),
+      ...(targetCategorySlug ? {
+        category: { is: { isActive: true, slug: targetCategorySlug } },
+      } : {}),
+      ...(query.dietary ? { dietaryLabels: { has: query.dietary } } : {}),
+      ...(targetProvider ? { providerId: targetProvider } : {}),
+      ...(query.minPrice || query.maxPrice ? {
+        price: {
+          ...(query.minPrice ? { gte: query.minPrice } : {}),
+          ...(query.maxPrice ? { lte: query.maxPrice } : {}),
+        },
+      } : {}),
+    };
+  };
 
-const ratingSortedIds = async (
-  database: typeof prisma,
-  query: MealListQuery,
-  skip: number,
-  take: number,
-  schemaName: string,
-): Promise<string[]> => {
-  const conditions: Prisma.Sql[] = [
-    Prisma.sql`m."isAvailable" = true`,
-    Prisma.sql`m."isArchived" = false`,
-    Prisma.sql`c."isActive" = true`,
-    Prisma.sql`p."acceptingOrders" = true`,
-    Prisma.sql`u."status" = 'ACTIVE'`,
-  ];
-  if (query.search) {
-    const pattern = `%${query.search}%`;
-    conditions.push(Prisma.sql`(m."name" ILIKE ${pattern} OR m."description" ILIKE ${pattern})`);
-  }
-  if (query.categoryId) {
-    conditions.push(Prisma.sql`(m."categoryId" = ${query.categoryId} OR c."slug" = ${query.categoryId})`);
-  }
-  if (query.categorySlug) conditions.push(Prisma.sql`c."slug" = ${query.categorySlug}`);
-  if (query.dietary) conditions.push(Prisma.sql`m."dietaryLabels" @> ARRAY[${query.dietary}]::text[]`);
-  if (query.providerId) conditions.push(Prisma.sql`m."providerId" = ${query.providerId}`);
-  if (query.minPrice) conditions.push(Prisma.sql`m."price" >= ${query.minPrice}::numeric`);
-  if (query.maxPrice) conditions.push(Prisma.sql`m."price" <= ${query.maxPrice}::numeric`);
+  const ratingSortedIds = async (
+    database: typeof prisma,
+    query: MealListQuery,
+    skip: number,
+    take: number,
+    schemaName: string,
+  ): Promise<string[]> => {
+    const conditions: Prisma.Sql[] = [
+      Prisma.sql`m."isAvailable" = true`,
+      Prisma.sql`m."isArchived" = false`,
+      Prisma.sql`c."isActive" = true`,
+      Prisma.sql`p."acceptingOrders" = true`,
+      Prisma.sql`u."status" = 'ACTIVE'`,
+    ];
+    if (query.search) {
+      const pattern = `%${query.search}%`;
+      conditions.push(Prisma.sql`(m."name" ILIKE ${pattern} OR m."description" ILIKE ${pattern})`);
+    }
+    if (query.categoryId) {
+      conditions.push(Prisma.sql`(m."categoryId" = ${query.categoryId} OR c."slug" = ${query.categoryId})`);
+    }
+    const targetCategorySlug = query.category ?? query.categorySlug;
+    if (targetCategorySlug) conditions.push(Prisma.sql`c."slug" = ${targetCategorySlug}`);
+    if (query.dietary) conditions.push(Prisma.sql`m."dietaryLabels" @> ARRAY[${query.dietary}]::text[]`);
+    const targetProvider = query.provider ?? query.providerId;
+    if (targetProvider) conditions.push(Prisma.sql`m."providerId" = ${targetProvider}`);
+    if (query.minPrice) conditions.push(Prisma.sql`m."price" >= ${query.minPrice}::numeric`);
+    if (query.maxPrice) conditions.push(Prisma.sql`m."price" <= ${query.maxPrice}::numeric`);
 
   if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(schemaName)) {
     throw new Error("Invalid internal database schema name");
