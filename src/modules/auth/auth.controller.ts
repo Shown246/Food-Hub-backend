@@ -1,7 +1,13 @@
 import { fromNodeHeaders } from "better-auth/node";
 import type { Request, Response } from "express";
 import { sendSuccess } from "../../common/responses.js";
-import type { ChangePasswordInput, LoginInput, RegisterInput } from "./auth.schema.js";
+import type {
+  ChangePasswordInput,
+  ForgotPasswordInput,
+  LoginInput,
+  RegisterInput,
+  ResetPasswordInput,
+} from "./auth.schema.js";
 import { authService, type AuthService } from "./auth.service.js";
 
 const applyAuthHeaders = (response: Response, headers: Headers): void => {
@@ -45,5 +51,44 @@ export const createAuthController = (service: AuthService = authService) => {
     sendSuccess(response, result.data);
   };
 
-  return { register, login, me, refresh: me, logout, changePassword };
+  const verifyEmail = async (request: Request, response: Response): Promise<void> => {
+    const token = (request.body?.token ?? request.query.token) as string;
+    const result = await service.verifyEmail(token);
+
+    const callbackURL = typeof request.query.callbackURL === "string" ? request.query.callbackURL : null;
+    if (request.method === "GET" && callbackURL) {
+      response.redirect(callbackURL);
+      return;
+    }
+
+    sendSuccess(response, result.data);
+  };
+
+  const resendVerification = async (request: Request, response: Response): Promise<void> => {
+    const result = await service.resendVerification((request.body as { email: string }).email);
+    sendSuccess(response, result.data);
+  };
+
+  const forgotPassword = async (request: Request, response: Response): Promise<void> => {
+    const result = await service.forgotPassword((request.body as ForgotPasswordInput).email);
+    sendSuccess(response, result.data);
+  };
+
+  const resetPassword = async (request: Request, response: Response): Promise<void> => {
+    const result = await service.resetPassword(request.body as ResetPasswordInput, request.requestId);
+    sendSuccess(response, result.data);
+  };
+
+  return {
+    register,
+    login,
+    me,
+    refresh: me,
+    logout,
+    changePassword,
+    verifyEmail,
+    resendVerification,
+    forgotPassword,
+    resetPassword,
+  };
 };

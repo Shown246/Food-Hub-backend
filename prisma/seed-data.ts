@@ -81,9 +81,9 @@ const ensureCredentialUser = async (
   }
   const passwordHash = await hashPassword(input.password);
   const user = existing
-    ? await database.user.update({ where: { id: existing.id }, data: { fullName: input.fullName }, select: { id: true } })
+    ? await database.user.update({ where: { id: existing.id }, data: { fullName: input.fullName, emailVerified: true }, select: { id: true } })
     : await database.user.create({
-      data: { fullName: input.fullName, email: input.email, role: input.role },
+      data: { fullName: input.fullName, email: input.email, role: input.role, emailVerified: true },
       select: { id: true },
     });
   await database.account.upsert({

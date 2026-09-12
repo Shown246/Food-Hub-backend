@@ -33,6 +33,11 @@ export interface AppConfig {
     bucketName: string;
     publicUrl: string;
   };
+  resend: {
+    apiKey: string;
+    fromEmail: string;
+  };
+  clientUrl: string;
 }
 
 export class ConfigError extends Error {
@@ -151,6 +156,13 @@ export const loadConfig = (env: NodeJS.ProcessEnv): AppConfig => {
   const storagePublicUrl = required(env, "R2_PUBLIC_URL");
   parseUrl(storagePublicUrl, "R2_PUBLIC_URL", ["http:", "https:"]);
 
+  const resendApiKey = env.RESEND_API_KEY?.trim() || "";
+  const resendFromEmail = env.RESEND_FROM_EMAIL?.trim() || "FoodHub <onboarding@resend.dev>";
+
+  const clientUrlText = env.CLIENT_URL?.trim() || corsOrigins[0] || "http://localhost:3000";
+  parseUrl(clientUrlText, "CLIENT_URL", ["http:", "https:"]);
+  const clientUrl = clientUrlText.replace(/\/$/, "");
+
   return {
     env: runtimeEnv as RuntimeEnvironment,
     port,
@@ -181,6 +193,11 @@ export const loadConfig = (env: NodeJS.ProcessEnv): AppConfig => {
       bucketName: storageBucketName,
       publicUrl: storagePublicUrl.replace(/\/$/, ""),
     },
+    resend: {
+      apiKey: resendApiKey,
+      fromEmail: resendFromEmail,
+    },
+    clientUrl,
   };
 };
 

@@ -42,11 +42,37 @@ export const loginSchema = z.object({
 export const changePasswordSchema = z.object({
   currentPassword: z.string().min(1).max(128),
   newPassword: password,
+  revokeOtherSessions: z.boolean().optional(),
 }).strict().refine(
   ({ currentPassword, newPassword }) => currentPassword !== newPassword,
   { path: ["newPassword"], message: "The new password must be different from the current password." },
 );
 
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+
+export const verifyEmailSchema = z.object({
+  token: z.string().min(1, "Verification token is required."),
+}).strict();
+
+export const resendVerificationSchema = z.object({
+  email: normalizedEmail,
+}).strict();
+
+export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
+export type ResendVerificationInput = z.infer<typeof resendVerificationSchema>;
+
+export const forgotPasswordSchema = z.object({
+  email: normalizedEmail,
+}).strict();
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, "Reset token is required."),
+  newPassword: password,
+}).strict();
+
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+

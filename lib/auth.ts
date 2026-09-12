@@ -14,6 +14,11 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
+    requireEmailVerification: true,
+  },
+  emailVerification: {
+    sendOnSignUp: false,
+    expiresIn: 3600,
   },
   user: {
     fields: {

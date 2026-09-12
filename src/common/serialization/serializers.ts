@@ -19,6 +19,7 @@ export const serializePublicUser = (user: PublicUserInput) => ({
 
 export interface OwnUserInput extends PublicUserInput {
   email: string;
+  emailVerified?: boolean;
   phone: string | null;
   role: string;
   status: string;
@@ -30,6 +31,7 @@ export interface OwnUserInput extends PublicUserInput {
 export const serializeOwnUser = (user: OwnUserInput) => ({
   ...serializePublicUser(user),
   email: user.email,
+  emailVerified: user.emailVerified ?? false,
   phone: user.phone,
   role: user.role,
   status: user.status,

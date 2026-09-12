@@ -9,6 +9,7 @@ export const publicUserSelect = {
 export const ownUserSelect = {
   ...publicUserSelect,
   email: true,
+  emailVerified: true,
   phone: true,
   role: true,
   status: true,
