@@ -211,6 +211,7 @@ export interface OrderInput {
   updatedAt: Date;
   items: OrderItemInput[];
   provider: PublicProviderInput;
+  reviews?: OrderReviewInput[];
   statusHistory: Array<{
     id: string;
     fromStatus: string | null;
@@ -221,44 +222,71 @@ export interface OrderInput {
   }>;
 }
 
-export const serializeOrder = (order: OrderInput) => ({
-  id: order.id,
-  orderNumber: order.orderNumber,
-  status: order.status,
-  paymentMethod: order.paymentMethod,
-  customerName: order.customerName,
-  customerPhone: order.customerPhone,
-  deliveryAddress: order.deliveryAddress,
-  deliveryInstructions: order.deliveryInstructions,
-  subtotal: decimalString(order.subtotal),
-  deliveryFee: decimalString(order.deliveryFee),
-  tax: decimalString(order.tax),
-  serviceFee: decimalString(order.serviceFee),
-  total: decimalString(order.total),
-  cancellationReason: order.cancellationReason,
-  cancelledAt: order.cancelledAt ? iso(order.cancelledAt) : null,
-  deliveredAt: order.deliveredAt ? iso(order.deliveredAt) : null,
-  createdAt: iso(order.createdAt),
-  updatedAt: iso(order.updatedAt),
-  provider: serializePublicProvider(order.provider),
-  items: order.items.map((item) => ({
-    id: item.id,
-    mealId: item.mealId,
-    mealName: item.mealName,
-    unitPrice: decimalString(item.unitPrice),
-    quantity: item.quantity,
-    itemNote: item.itemNote,
-    lineTotal: decimalString(item.lineTotal),
-  })),
-  statusHistory: order.statusHistory.map((history) => ({
-    id: history.id,
-    fromStatus: history.fromStatus,
-    toStatus: history.toStatus,
-    actorRole: history.actorRole,
-    note: history.note,
-    createdAt: iso(history.createdAt),
-  })),
+export interface OrderReviewInput {
+  id: string;
+  mealId: string;
+  rating: number;
+  comment: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export const serializeOrderReview = (review: OrderReviewInput) => ({
+  id: review.id,
+  mealId: review.mealId,
+  rating: review.rating,
+  comment: review.comment,
+  createdAt: iso(review.createdAt),
+  updatedAt: iso(review.updatedAt),
 });
+
+export const serializeOrder = (order: OrderInput) => {
+  const reviews = (order.reviews || []).map(serializeOrderReview);
+  const averageRating = reviews.length > 0
+    ? Number((reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1))
+    : null;
+
+  return {
+    id: order.id,
+    orderNumber: order.orderNumber,
+    status: order.status,
+    paymentMethod: order.paymentMethod,
+    customerName: order.customerName,
+    customerPhone: order.customerPhone,
+    deliveryAddress: order.deliveryAddress,
+    deliveryInstructions: order.deliveryInstructions,
+    subtotal: decimalString(order.subtotal),
+    deliveryFee: decimalString(order.deliveryFee),
+    tax: decimalString(order.tax),
+    serviceFee: decimalString(order.serviceFee),
+    total: decimalString(order.total),
+    cancellationReason: order.cancellationReason,
+    cancelledAt: order.cancelledAt ? iso(order.cancelledAt) : null,
+    deliveredAt: order.deliveredAt ? iso(order.deliveredAt) : null,
+    createdAt: iso(order.createdAt),
+    updatedAt: iso(order.updatedAt),
+    provider: serializePublicProvider(order.provider),
+    reviews,
+    averageRating,
+    items: order.items.map((item) => ({
+      id: item.id,
+      mealId: item.mealId,
+      mealName: item.mealName,
+      unitPrice: decimalString(item.unitPrice),
+      quantity: item.quantity,
+      itemNote: item.itemNote,
+      lineTotal: decimalString(item.lineTotal),
+    })),
+    statusHistory: order.statusHistory.map((history) => ({
+      id: history.id,
+      fromStatus: history.fromStatus,
+      toStatus: history.toStatus,
+      actorRole: history.actorRole,
+      note: history.note,
+      createdAt: iso(history.createdAt),
+    })),
+  };
+};
 
 export interface OrderSummaryInput {
   id: string;
@@ -276,25 +304,35 @@ export interface OrderSummaryInput {
   updatedAt: Date;
   provider: PublicProviderInput;
   _count: { items: number };
+  reviews?: OrderReviewInput[];
 }
 
-export const serializeOrderSummary = (order: OrderSummaryInput) => ({
-  id: order.id,
-  orderNumber: order.orderNumber,
-  status: order.status,
-  paymentMethod: order.paymentMethod,
-  subtotal: decimalString(order.subtotal),
-  deliveryFee: decimalString(order.deliveryFee),
-  tax: decimalString(order.tax),
-  serviceFee: decimalString(order.serviceFee),
-  total: decimalString(order.total),
-  itemCount: order._count.items,
-  cancelledAt: order.cancelledAt ? iso(order.cancelledAt) : null,
-  deliveredAt: order.deliveredAt ? iso(order.deliveredAt) : null,
-  createdAt: iso(order.createdAt),
-  updatedAt: iso(order.updatedAt),
-  provider: serializePublicProvider(order.provider),
-});
+export const serializeOrderSummary = (order: OrderSummaryInput) => {
+  const reviews = (order.reviews || []).map(serializeOrderReview);
+  const averageRating = reviews.length > 0
+    ? Number((reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1))
+    : null;
+
+  return {
+    id: order.id,
+    orderNumber: order.orderNumber,
+    status: order.status,
+    paymentMethod: order.paymentMethod,
+    subtotal: decimalString(order.subtotal),
+    deliveryFee: decimalString(order.deliveryFee),
+    tax: decimalString(order.tax),
+    serviceFee: decimalString(order.serviceFee),
+    total: decimalString(order.total),
+    itemCount: order._count.items,
+    cancelledAt: order.cancelledAt ? iso(order.cancelledAt) : null,
+    deliveredAt: order.deliveredAt ? iso(order.deliveredAt) : null,
+    createdAt: iso(order.createdAt),
+    updatedAt: iso(order.updatedAt),
+    provider: serializePublicProvider(order.provider),
+    reviews,
+    averageRating,
+  };
+};
 
 export const serializeProviderOrderSummary = (order: OrderSummaryInput & { customerName: string }) => ({
   ...serializeOrderSummary(order),

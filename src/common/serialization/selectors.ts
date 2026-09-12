@@ -96,6 +96,15 @@ export const providerMealSelect = {
   },
 } satisfies Prisma.MealSelect;
 
+export const orderReviewSelect = {
+  id: true,
+  mealId: true,
+  rating: true,
+  comment: true,
+  createdAt: true,
+  updatedAt: true,
+} satisfies Prisma.ReviewSelect;
+
 export const safeOrderSelect = {
   id: true,
   orderNumber: true,
@@ -138,6 +147,10 @@ export const safeOrderSelect = {
     },
     orderBy: { createdAt: "asc" },
   },
+  reviews: {
+    where: { isActive: true },
+    select: orderReviewSelect,
+  },
 } satisfies Prisma.OrderSelect;
 
 export const orderSummarySelect = {
@@ -156,6 +169,10 @@ export const orderSummarySelect = {
   updatedAt: true,
   provider: { select: publicProviderSelect },
   _count: { select: { items: true } },
+  reviews: {
+    where: { isActive: true },
+    select: orderReviewSelect,
+  },
 } satisfies Prisma.OrderSelect;
 
 export const providerOrderSummarySelect = {

@@ -68,6 +68,7 @@ export const openApiDocument = {
     { name: "Admin orders", description: "ADMIN-only platform order oversight." },
     { name: "Admin categories", description: "ADMIN-only category management." },
     { name: "Dashboards", description: "Role-scoped PROVIDER and ADMIN aggregate dashboards." },
+    { name: "Uploads", description: "Direct-to-storage presigned upload URL generation for authenticated providers." },
     { name: "Operations", description: "Unauthenticated operational endpoints." },
   ],
   paths: {
@@ -129,6 +130,20 @@ export const openApiDocument = {
     },
     "/provider/dashboard": { get: { operationId: "getProviderDashboard", tags: ["Dashboards"], summary: "Get provider-scoped aggregates", security: cookieSecurity, responses: { 200: success(ref("ProviderDashboard")), ...errorResponses([400, 401, 403]) } } },
     "/admin/dashboard": { get: { operationId: "getAdminDashboard", tags: ["Dashboards"], summary: "Get platform aggregates", security: cookieSecurity, responses: { 200: success(ref("AdminDashboard")), ...errorResponses([400, 401, 403]) } } },
+    "/uploads/presigned-url": {
+      post: {
+        operationId: "createPresignedUploadUrl",
+        tags: ["Uploads"],
+        summary: "Generate a presigned upload URL for direct storage upload",
+        description: "Generates a signed Cloudflare R2 PUT URL with 5-minute TTL. Limited to authenticated providers.",
+        security: cookieSecurity,
+        requestBody: body(ref("PresignedUploadUrlRequest")),
+        responses: {
+          200: success(ref("PresignedUploadUrlPayload")),
+          ...errorResponses([400, 401, 403, 422]),
+        },
+      },
+    },
   },
   components: {
     securitySchemes: { cookieSession: { type: "apiKey", in: "cookie", name: "better-auth.session_token", description: "HttpOnly Better Auth server-session cookie. The exact cookie prefix can vary with secure deployment settings." } },
@@ -196,6 +211,27 @@ export const openApiDocument = {
       UserStatusRequest: { type: "object", required: ["status"], properties: { status: ref("AccountStatus") }, additionalProperties: false },
       CreateCategoryRequest: { type: "object", required: ["name"], properties: { name: { type: "string", maxLength: 100 }, description: nullable({ type: "string", maxLength: 1000 }), displayOrder: { type: "integer", minimum: 0, maximum: 1000000 }, isActive: { type: "boolean" } }, additionalProperties: false },
       UpdateCategoryRequest: { type: "object", minProperties: 1, properties: { name: { type: "string", maxLength: 100 }, slug: { type: "string", maxLength: 120 }, description: nullable({ type: "string", maxLength: 1000 }), displayOrder: { type: "integer", minimum: 0, maximum: 1000000 }, isActive: { type: "boolean" } }, additionalProperties: false },
+      PresignedUploadUrlRequest: {
+        type: "object",
+        required: ["fileName", "contentType", "fileSize"],
+        properties: {
+          fileName: { type: "string", minLength: 1, maxLength: 200, example: "biryani.jpg" },
+          contentType: { type: "string", enum: ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"], example: "image/jpeg" },
+          fileSize: { type: "integer", minimum: 1, maximum: 5242880, example: 1048576 },
+          folder: { type: "string", enum: ["meals"], default: "meals" },
+        },
+        additionalProperties: false,
+      },
+      PresignedUploadUrlPayload: {
+        type: "object",
+        required: ["uploadUrl", "publicUrl", "key"],
+        properties: {
+          uploadUrl: { type: "string", format: "uri" },
+          publicUrl: { type: "string", format: "uri" },
+          key: { type: "string" },
+        },
+        additionalProperties: false,
+      },
     },
   },
 } satisfies Record<string, unknown>;

@@ -1,6 +1,15 @@
 import { z } from "zod";
 import { httpUrl, positiveMoney, resourceId, safeText } from "../../common/validation/schemas.js";
 
+export const slugifyMeal = (value: string): string => value
+  .normalize("NFKD")
+  .replace(/[\u0300-\u036f]/g, "")
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, "-")
+  .replace(/^-+|-+$/g, "")
+  .slice(0, 180)
+  .replace(/-+$/g, "");
+
 const booleanQuery = z.enum(["true", "false"]).transform((value) => value === "true");
 const nullableHttpUrl = z.union([httpUrl, z.null()]);
 const nullablePreparationTime = z.union([z.number().int().min(1).max(1_440), z.null()]);

@@ -25,6 +25,7 @@ import { adminUserRouter } from "./modules/admin-users/admin-user.routes.js";
 import { adminOrderRouter } from "./modules/admin-orders/admin-order.routes.js";
 import { adminCategoryRouter } from "./modules/admin-categories/admin-category.routes.js";
 import { dashboardRouter } from "./modules/dashboards/dashboard.routes.js";
+import { uploadRouter } from "./modules/uploads/upload.routes.js";
 
 export interface AppDependencies {
   authHandler?: RequestHandler;
@@ -40,6 +41,7 @@ export interface AppDependencies {
   adminOrderRoutes?: RequestHandler;
   adminCategoryRoutes?: RequestHandler;
   dashboardRoutes?: RequestHandler;
+  uploadRoutes?: RequestHandler;
   openApiDocsEnabled?: boolean;
   checkDatabase?: () => Promise<void>;
   logger?: SafeLogger;
@@ -100,6 +102,7 @@ export const createApp = (dependencies: AppDependencies = {}): Application => {
   application.use("/api", dependencies.adminOrderRoutes ?? adminOrderRouter);
   application.use("/api", dependencies.adminCategoryRoutes ?? adminCategoryRouter);
   application.use("/api", dependencies.dashboardRoutes ?? dashboardRouter);
+  application.use("/api", dependencies.uploadRoutes ?? uploadRouter);
 
   application.get("/api/health", async (_request, response, next) => {
     try {

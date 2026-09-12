@@ -26,6 +26,13 @@ export interface AppConfig {
     reviewCreation: number;
     publicSearch: number;
   };
+  storage: {
+    accountId: string;
+    accessKeyId: string;
+    secretAccessKey: string;
+    bucketName: string;
+    publicUrl: string;
+  };
 }
 
 export class ConfigError extends Error {
@@ -137,6 +144,13 @@ export const loadConfig = (env: NodeJS.ProcessEnv): AppConfig => {
     throw new ConfigError("LOG_LEVEL must be debug, info, warn, or error");
   }
 
+  const storageAccountId = required(env, "R2_ACCOUNT_ID");
+  const storageAccessKeyId = required(env, "R2_ACCESS_KEY_ID");
+  const storageSecretAccessKey = required(env, "R2_SECRET_ACCESS_KEY");
+  const storageBucketName = required(env, "R2_BUCKET_NAME");
+  const storagePublicUrl = required(env, "R2_PUBLIC_URL");
+  parseUrl(storagePublicUrl, "R2_PUBLIC_URL", ["http:", "https:"]);
+
   return {
     env: runtimeEnv as RuntimeEnvironment,
     port,
@@ -159,6 +173,13 @@ export const loadConfig = (env: NodeJS.ProcessEnv): AppConfig => {
       orderCreation: parseInteger(env.ORDER_RATE_LIMIT_MAX, 10, "ORDER_RATE_LIMIT_MAX", 1, 10_000),
       reviewCreation: parseInteger(env.REVIEW_RATE_LIMIT_MAX, 10, "REVIEW_RATE_LIMIT_MAX", 1, 10_000),
       publicSearch: parseInteger(env.PUBLIC_SEARCH_RATE_LIMIT_MAX, 60, "PUBLIC_SEARCH_RATE_LIMIT_MAX", 1, 10_000),
+    },
+    storage: {
+      accountId: storageAccountId,
+      accessKeyId: storageAccessKeyId,
+      secretAccessKey: storageSecretAccessKey,
+      bucketName: storageBucketName,
+      publicUrl: storagePublicUrl.replace(/\/$/, ""),
     },
   };
 };
