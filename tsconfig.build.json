@@ -1,7 +1,11 @@
 {
   "extends": "./tsconfig.json",
+  "files": [
+    "src/types/express.d.ts"
+  ],
   "include": [
     "src/**/*.ts",
+    "src/**/*.d.ts",
     "lib/**/*.ts"
   ],
   "exclude": [

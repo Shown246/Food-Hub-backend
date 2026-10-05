@@ -1,3 +1,4 @@
+/// <reference path="../../types/express.d.ts" />
 import type { Request, RequestHandler } from "express";
 import { fromNodeHeaders } from "better-auth/node";
 import { auth } from "../../../lib/auth.js";
