@@ -15,13 +15,11 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true,
-    "types": ["node", "vitest/globals"]
+    "types": ["node"]
   },
   "include": [
     "src/**/*.ts",
-    "lib/**/*.ts",
-    "tests/**/*.ts",
-    "vitest.config.ts"
+    "lib/**/*.ts"
   ],
   "exclude": [
     "node_modules",
