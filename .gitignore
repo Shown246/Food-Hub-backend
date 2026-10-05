@@ -9,3 +9,5 @@ coverage
 /generated/prisma
 /tests
 /docs
+.vercel
+.env*

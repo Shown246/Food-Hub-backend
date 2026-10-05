@@ -125,3 +125,4 @@ export const createApp = (dependencies: AppDependencies = {}): Application => {
 };
 
 export const app = createApp();
+export default app;
